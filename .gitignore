@@ -1,0 +1,12 @@
+# Byte-compiled Python files
+__pycache__/
+*.pyc
+
+# Output
+out/
+
+# Binary files
+*.iso
+*.tgc
+*.gba
+*.bin

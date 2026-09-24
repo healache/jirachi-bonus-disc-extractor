@@ -1076,6 +1076,7 @@
     const filename = document.createElement("span");
     filename.className = "btn__filename";
     filename.textContent = makePatchedFilename(fileInfo, {
+      mode: outputState.mode,
       shinyUnlocked: fileInfo.supportsShinyUnlock && shinyUnlocked,
     });
     copy.append(title, filename);

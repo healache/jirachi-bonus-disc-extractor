@@ -34,13 +34,15 @@ any check fails, the script aborts rather than silently extracting
 garbage from the wrong offsets.
 """
 
-from __future__ import annotations
+import sys
+
+if sys.version_info < (3, 8):
+    sys.exit("error: Python {}.{} is less than 3.8".format(*sys.version_info))
 
 import hashlib
 import os
 import pathlib
 import struct
-import sys
 import typing as t
 
 # --- GameCube disc header (boot.bin) ----------------------------------
@@ -116,7 +118,7 @@ def extract_target(iso: t.BinaryIO, target: Target, out_dir: pathlib.Path) -> in
 
 def read_fst_entry(
     iso: t.BinaryIO, fst_offset: int, entry_index: int,
-) -> tuple[bool, int]:
+) -> "tuple[bool, int]":
     """
     Read an FST entry's type and file offset.
 

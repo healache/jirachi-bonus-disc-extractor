@@ -812,6 +812,7 @@
   const outputState = { mode: "multiboot" };
   let shinyUnlocked = false;
   let processGeneration = 0;
+  let patchGeneration = 0;
   const openDisclosureIds = new Set();
 
   const translate = (key, ...args) => {
@@ -842,6 +843,9 @@
   outputModeInputs.forEach((input) => {
     input.addEventListener("change", () => {
       outputState.mode = input.value === "emulator" ? "emulator" : "multiboot";
+      patchGeneration += 1;
+      currentStatusKey = null;
+      setStatus("");
       updateOutputSummary();
       updateRenderedRomItems();
     });
@@ -1083,6 +1087,7 @@
     button.appendChild(copy);
 
     button.addEventListener("click", async () => {
+      const generation = ++patchGeneration;
       const options = {
         mode: outputState.mode,
         shinyUnlocked: fileInfo.supportsShinyUnlock && shinyUnlocked,
@@ -1106,13 +1111,17 @@
         anchor.click();
         anchor.remove();
         setTimeout(() => URL.revokeObjectURL(url), 0);
-        currentStatusKey = null;
-        setStatus("");
+        if (generation === patchGeneration) {
+          currentStatusKey = null;
+          setStatus("");
+        }
       } catch (error) {
-        currentStatusKey = error instanceof Error && error.message === "hash-mismatch"
-          ? "hashMismatch"
-          : "patchFailed";
-        setStatus(translate(currentStatusKey));
+        if (generation === patchGeneration) {
+          currentStatusKey = error instanceof Error && error.message === "hash-mismatch"
+            ? "hashMismatch"
+            : "patchFailed";
+          setStatus(translate(currentStatusKey));
+        }
       } finally {
         button.disabled = false;
         button.removeAttribute("aria-busy");
@@ -1337,6 +1346,9 @@
 
       checkbox.addEventListener("change", () => {
         shinyUnlocked = checkbox.checked;
+        patchGeneration += 1;
+        currentStatusKey = null;
+        setStatus("");
         if (checkbox.checked) {
           openDisclosureIds.add(fileInfo.patchId);
           disclosure.open = true;
@@ -1370,6 +1382,7 @@
 
   function resetInterface(options = {}) {
     if (options.invalidate !== false) processGeneration += 1;
+    patchGeneration += 1;
     rawDownloadUrls.forEach((url) => URL.revokeObjectURL(url));
     rawDownloadUrls = [];
     currentRomFiles = [];

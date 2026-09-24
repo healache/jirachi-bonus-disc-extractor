@@ -767,7 +767,6 @@
   const PATCH_DEFINITIONS = {
     "wishing-star": {
       sha256: "544719a8a96439ef56eee84afebdfa7ebe1abbb7a1e93f0e21f98fc5365b8f27",
-      compressedOut: 0x02018000,
       checks: [
         [0x0201E398, 0x0000E03A, 0xE1C010B0],
         [0x0201F5F6, 0x00002000, 0xE1C010B0],
@@ -776,7 +775,6 @@
     },
     meteor: {
       sha256: "f6c0110162aa48c13707cbb21ba612a4833820eaef538335d82f2d54e6cceeb8",
-      compressedOut: 0x02010000,
       checks: [
         [0x02010378, 0x00000000, 0xE5801000],
         [0x0201437C, 0x00002000, 0xE1C010B0],
@@ -785,7 +783,6 @@
     },
     wishmaker: {
       sha256: "a78161cc15f356e9e356619ab4701be3e2c5270075129c33bc35f2033402681f",
-      compressedOut: 0x02010000,
       checks: [
         [0x0201036C, 0x00000000, 0xE5801000],
         [0x02014CEC, 0x00002000, 0xE1C010B0],
@@ -794,13 +791,14 @@
     },
   };
 
-  const LDR_R0_TEMPLATE = 0xE59F0014;
-  const LDR_R1_TEMPLATE = 0xE59F1014;
-  const LDR_LR_TEMPLATE = 0xE59FE00C;
-  const BX_LR = 0xE12FFF1E;
-  const R0_TO_R1_MASK = LDR_R0_TEMPLATE ^ LDR_R1_TEMPLATE;
+  const OFF_LDR_R0 = 0x154;
+  const OFF_LDR_R1 = 0x158;
+  const OFF_LDR_LR = 0x160;
+  const OFF_BX_LR = 0x164;
+  const OFF_DECOMPRESSED_OUT = 0x174;
   const OFF_ADDR_FIXUP = 0x154;
   const OFF_CHECKS = 0x160;
+
   const COMPRESSED_IN_MULTIBOOT = 0x02000278;
   const COMPRESSED_IN_EMULATOR = 0x08000278;
 
@@ -944,28 +942,40 @@
   }
 
   function retarget(word, instructionOffset, target) {
-    return ((word & ~0xFFF) | ((target - instructionOffset - 8) & 0xFFF)) >>> 0;
+    return ((word & ~0xFFF) | (target - instructionOffset - 8)) >>> 0;
   }
 
-  function asR1(ldrR0Word) {
-    return (ldrR0Word ^ R0_TO_R1_MASK) >>> 0;
+  function readPatchTemplates(bytes) {
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const read = (offset) => view.getUint32(offset, true);
+    const ldrR0 = read(OFF_LDR_R0);
+    const ldrR1 = read(OFF_LDR_R1);
+    return {
+      ldrR0,
+      ldrLr: read(OFF_LDR_LR),
+      bxLr: read(OFF_BX_LR),
+      r0ToR1: ldrR0 ^ ldrR1,
+      compressedOut: read(OFF_DECOMPRESSED_OUT),
+    };
   }
 
-  function applyRelocatedPatch(bytes, checks, compressedOut) {
+  function applyRelocatedPatch(bytes, checks, templates) {
+    const { ldrR0, ldrLr, bxLr, r0ToR1, compressedOut } = templates;
     const n = checks.length;
     const literalPool = OFF_CHECKS + (n * 3 + 2) * 4;
     const jump = OFF_CHECKS + n * 3 * 4;
 
-    writeUint32LE(bytes, OFF_ADDR_FIXUP, retarget(LDR_R0_TEMPLATE, OFF_ADDR_FIXUP, literalPool));
-    writeUint32LE(bytes, OFF_ADDR_FIXUP + 4, asR1(
-      retarget(LDR_R0_TEMPLATE, OFF_ADDR_FIXUP + 4, literalPool + 4),
-    ));
+    const writeLdrPair = (offset, literal) => {
+      writeUint32LE(bytes, offset, retarget(ldrR0, offset, literal));
+      writeUint32LE(bytes, offset + 4, retarget(ldrR0, offset + 4, literal + 4) ^ r0ToR1);
+    };
+
+    writeLdrPair(OFF_ADDR_FIXUP, literalPool);
 
     let literal = literalPool + 8;
     let block = OFF_CHECKS;
     for (const [targetAddress, patchValue, storeWord] of checks) {
-      writeUint32LE(bytes, block, retarget(LDR_R0_TEMPLATE, block, literal));
-      writeUint32LE(bytes, block + 4, asR1(retarget(LDR_R0_TEMPLATE, block + 4, literal + 4)));
+      writeLdrPair(block, literal);
       writeUint32LE(bytes, block + 8, storeWord);
       writeUint32LE(bytes, literal, targetAddress);
       writeUint32LE(bytes, literal + 4, patchValue);
@@ -973,8 +983,8 @@
       literal += 8;
     }
 
-    writeUint32LE(bytes, jump, retarget(LDR_LR_TEMPLATE, jump, literalPool + 4));
-    writeUint32LE(bytes, jump + 4, BX_LR);
+    writeUint32LE(bytes, jump, retarget(ldrLr, jump, literalPool + 4));
+    writeUint32LE(bytes, jump + 4, bxLr);
     writeUint32LE(bytes, literalPool + 4, compressedOut);
 
     return literalPool;
@@ -989,16 +999,14 @@
     }
 
     const rom = new Uint8Array(fileInfo.bytes);
+    const templates = readPatchTemplates(rom);
+
     const checks = definition.checks.slice();
     if (fileInfo.supportsShinyUnlock && options.shinyUnlocked) {
       checks.push(definition.shinyCheck);
     }
 
-    const literalPool = applyRelocatedPatch(
-      rom,
-      checks,
-      definition.compressedOut,
-    );
+    const literalPool = applyRelocatedPatch(rom, checks, templates);
 
     writeUint32LE(
       rom,

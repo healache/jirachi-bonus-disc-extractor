@@ -6,6 +6,12 @@
   Jirachi Distribution Disc Extractor
   Single-file, offline extractor for the three Jirachi ROMs embedded in the
   Pokémon Colosseum Bonus Disc image (PC6E01 Rev.00).
+
+  Third-party reference:
+  The multiboot compatibility patch behavior is independently implemented in
+  this project using technical information from Zaksabeast's 2023
+  Multiboot-Jirachi-Patches project, licensed under the ISC License.
+  https://github.com/zaksabeast/Multiboot-Jirachi-Patches/
 -->
 <html lang="en" class="language-pending">
 <head>
@@ -28,15 +34,13 @@
     --accent-shadow: #96762f;
     --danger: #e2857c;
     --line: #37362c;
+    --line-strong: #555344;
     --btn-bg: var(--fg);
     --btn-fg: var(--bg);
     --focus: var(--accent);
     --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", "Roboto Mono", Consolas, "Liberation Mono", monospace;
-    --shell-width: 1100px;
-    --card-width: 340px;
-    --card-gap: 1rem;
-    --results-width: 1052px;
-    --field-size: 12.5px;
+    --shell-width: 880px;
+    --field-size: 13px;
   }
 
   @media (prefers-color-scheme: light) {
@@ -49,6 +53,7 @@
       --accent-text: #8a5c12;
       --danger: #a3352c;
       --line: #cfc7b2;
+      --line-strong: #a39a81;
       --btn-bg: #14110a;
       --btn-fg: #f2ede0;
       --focus: var(--fg);
@@ -71,7 +76,7 @@
 
   :focus-visible {
     outline: 3px solid var(--focus);
-    outline-offset: 2px;
+    outline-offset: 3px;
   }
 
   button, input {
@@ -196,7 +201,7 @@
 
   .filename-line {
     display: none;
-    margin: 0 0 0.35rem;
+    margin: 0 0 0.65rem;
     overflow-wrap: anywhere;
     color: var(--fg-dim);
     font-size: 0.85rem;
@@ -216,128 +221,136 @@
 
   #results-section {
     width: 100%;
-    max-width: var(--results-width);
+    max-width: 840px;
     margin-inline: auto;
   }
 
   #results-heading { scroll-margin-block-start: 1rem; }
-  #results-heading:focus { outline: 3px solid var(--focus); outline-offset: 4px; }
 
-  .results {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, var(--card-width)));
-    justify-content: center;
-    gap: var(--card-gap);
-    align-items: stretch;
+  .settings-panel {
+    margin: 0 0 1.25rem;
+    border: 2px solid var(--line-strong);
+    background: var(--bg-well);
   }
 
-  .card {
-    width: 100%;
-    max-width: var(--card-width);
-    min-width: 0;
-    border: 3px solid var(--fg);
-    padding: 1.1rem;
-    display: grid;
-    grid-template-rows: auto auto 1fr;
-    gap: 0.65rem;
-  }
-
-  .card__heading {
+  .settings-panel > summary {
     display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    min-width: 0;
-  }
-
-  .card__name {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin: 0;
-    overflow: hidden;
-    font-size: 1.2rem;
-    line-height: 1.35;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .card__facts {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.35rem 1rem;
-    margin: 0;
-    font-size: var(--field-size);
-  }
-
-  .card__facts div {
-    display: flex;
-    gap: 0.35rem;
-    min-width: 0;
-  }
-
-  .card__facts dt,
-  .card__language dt,
-  .card__shiny dt {
-    margin: 0;
-    color: var(--fg-dim);
-    white-space: nowrap;
-  }
-
-  .card__facts dd,
-  .card__language dd,
-  .card__shiny dd {
-    margin: 0;
-    font-weight: 700;
-    overflow-wrap: anywhere;
-  }
-
-  .card__cta {
-    display: flex;
-    flex-direction: column;
-    gap: 0.65rem;
-    margin-top: auto;
-  }
-
-  .card__status {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: center;
-    width: 100%;
-    gap: 0.35rem 1rem;
-    min-width: 0;
-    font-size: var(--field-size);
-  }
-
-  .card__language {
-    grid-column: 1;
-    margin: 0;
-    white-space: nowrap;
-  }
-
-  .card__language dt,
-  .card__language dd { display: inline; }
-
-  .card__language dt { margin-right: 0.35rem; }
-
-  .card__shiny {
-    display: flex;
-    grid-column: 2;
     align-items: baseline;
-    gap: 0.35rem;
-    min-width: 0;
-    margin: 0;
-    text-align: left;
-    white-space: nowrap;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    list-style: none;
   }
 
-  .card__shiny dd.lock--huntable { color: var(--accent-text); }
-  .card__shiny dd.lock--locked { color: var(--fg-dim); font-weight: 400; }
+  .settings-panel > summary::-webkit-details-marker { display: none; }
+  .settings-panel > summary::after { content: "+"; color: var(--accent-text); font-weight: 700; }
+  .settings-panel[open] > summary::after { content: "−"; }
+  .settings-panel > summary:hover,
+  .settings-panel > summary:focus-visible { background: rgb(231 182 76 / 5%); }
+
+  .settings-panel__title {
+    font-weight: 700;
+  }
+
+  .settings-panel__current {
+    color: var(--accent-text);
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .settings-panel__body {
+    padding: 0 1rem 1rem;
+    border-top: 2px solid var(--line);
+  }
+
+  .settings-panel__detail {
+    margin: 0.85rem 0;
+    color: var(--fg-dim);
+    font-size: 0.78rem;
+  }
+
+  .choice-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    border: 2px solid var(--line);
+  }
+
+  .choice {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.65rem;
+    align-items: start;
+    min-width: 0;
+    padding: 0.9rem;
+    border-left: 2px solid var(--line);
+    cursor: pointer;
+  }
+
+  .choice:first-child { border-left: 0; }
+  .choice:hover { background: rgb(231 182 76 / 5%); }
+  .choice:focus-within { box-shadow: inset 0 0 0 3px var(--focus); }
+  .choice:has(input:checked) { background: rgb(231 182 76 / 8%); box-shadow: inset 0 -4px 0 var(--accent); }
+
+  .choice input {
+    position: absolute;
+    opacity: 0;
+  }
+
+  .choice__radio {
+    width: 1rem;
+    height: 1rem;
+    margin-top: 0.2rem;
+    border: 2px solid var(--fg-dim);
+    border-radius: 50%;
+  }
+
+  .choice input:checked + .choice__radio {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 3px var(--bg-well), inset 0 0 0 7px var(--accent);
+  }
+
+  .choice__title { display: block; font-weight: 700; }
+  .choice__detail { display: block; margin-top: 0.2rem; color: var(--fg-dim); font-size: 0.74rem; line-height: 1.45; }
+
+  .rom-list {
+    border-top: 3px solid var(--fg);
+  }
+
+  .rom-item {
+    padding: 1.15rem 0 1.35rem;
+    border-bottom: 2px solid var(--line);
+  }
+
+  .rom-item:last-child { border-bottom: 3px solid var(--fg); }
+
+  .rom-item__main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+    align-items: center;
+    gap: 1rem 1.25rem;
+  }
+
+  .rom-item__heading {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    min-width: 0;
+  }
+
+  .rom-item__name {
+    min-width: 0;
+    margin: 0;
+    font-size: 1.1rem;
+    line-height: 1.3;
+  }
 
   .badge {
     flex: none;
-    align-self: flex-start;
-    margin-left: auto;
     max-width: 100%;
-    padding: 0.2rem 0.55rem;
+    padding: 0.18rem 0.5rem;
     background: var(--accent);
     color: var(--accent-ink);
     font-size: 10.5px;
@@ -347,16 +360,135 @@
   }
 
   .badge--muted {
-    padding: calc(0.2rem - 2px) calc(0.55rem - 2px);
+    padding: calc(0.18rem - 2px) calc(0.5rem - 2px);
     border: 2px solid var(--line);
     background: transparent;
     color: var(--fg-dim);
   }
 
+  .badge--unofficial {
+    padding: calc(0.18rem - 2px) calc(0.5rem - 2px);
+    border: 2px solid var(--danger);
+    background: transparent;
+    color: var(--danger);
+  }
+
+  .rom-item__download {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.45rem;
+    width: 100%;
+    min-width: 0;
+    justify-self: end;
+  }
+
+  .rom-item__download .btn { width: 100%; }
+
+  .rom-item__disclosure {
+    margin-top: 1rem;
+    border: 2px solid var(--line);
+    background: var(--bg-well);
+  }
+
+  .rom-item__disclosure > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    cursor: pointer;
+    color: var(--fg);
+    font-size: 0.78rem;
+    font-weight: 700;
+    list-style: none;
+  }
+
+  .rom-item__disclosure > summary::-webkit-details-marker { display: none; }
+  .rom-item__disclosure > summary::after {
+    flex: none;
+    content: "+";
+    color: var(--accent-text);
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .rom-item__disclosure[open] > summary {
+    border-bottom: 2px solid var(--line);
+  }
+  .rom-item__disclosure[open] > summary::after { content: "−"; }
+  .rom-item__disclosure > summary:hover { background: rgb(231 182 76 / 5%); }
+  .rom-item__disclosure > summary:focus-visible {
+    outline: 3px solid var(--focus);
+    outline-offset: -3px;
+  }
+
+  .rom-item__details {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.8rem 1rem;
+    margin: 0;
+    padding: 0.85rem;
+  }
+
+  .fact { min-width: 0; margin: 0; }
+  .fact dt { margin: 0; color: var(--fg-dim); font-size: 0.75rem; }
+  .fact dd { margin: 0.08rem 0 0; font-size: var(--field-size); font-weight: 700; overflow-wrap: anywhere; }
+
+  .shiny--possible { color: var(--accent-text); }
+  .shiny--locked { color: var(--fg-dim); font-weight: 400 !important; }
+  .shiny--unofficial { color: var(--danger); }
+
+  .rom-item__options {
+    grid-column: 1 / -1;
+    margin-top: 0.15rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .check-choice {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.7rem;
+    align-items: start;
+    padding: 0.75rem;
+    border: 2px solid var(--line);
+    cursor: pointer;
+  }
+
+  .check-choice:hover { border-color: var(--line-strong); }
+  .check-choice:focus-within { box-shadow: inset 0 0 0 3px var(--focus); }
+
+  .check-choice input { width: 1.2rem; height: 1.2rem; margin: 0.12rem 0 0; accent-color: var(--accent); }
+  .check-choice__title { display: block; font-weight: 700; }
+  .check-choice__detail { display: block; margin-top: 0.2rem; color: var(--fg-dim); font-size: 0.75rem; line-height: 1.45; }
+
+  .patch-warning {
+    margin: 0.75rem 0 0;
+    padding: 0.75rem;
+    border: 3px solid var(--danger);
+    color: var(--danger);
+    font-size: 0.78rem;
+    font-weight: 700;
+    line-height: 1.5;
+  }
+
+  .raw-download {
+    grid-column: 1 / -1;
+    justify-self: start;
+    margin-top: 0.05rem;
+    color: var(--fg-dim);
+    font-size: 0.76rem;
+    text-underline-offset: 0.18em;
+  }
+
   .btn {
-    display: inline-block;
-    min-height: 44px;
-    padding: 0.6rem 0.9rem;
+    display: inline-flex;
+    min-height: 46px;
+    align-items: center;
+    justify-content: center;
+    padding: 0.62rem 0.9rem;
     border: 3px solid var(--btn-bg);
     background: var(--btn-bg);
     color: var(--btn-fg);
@@ -368,25 +500,12 @@
   }
 
   .btn:hover,
-  .btn:focus-visible {
-    border-color: var(--accent);
-    background: var(--accent);
-    color: var(--accent-ink);
-  }
+  .btn:focus-visible { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+  .btn:active { transform: translate(4px, 4px); box-shadow: 1px 1px 0 var(--accent-shadow); }
+  .btn[disabled] { cursor: wait; opacity: 0.65; box-shadow: none; }
 
-  .btn:active {
-    transform: translate(4px, 4px);
-    box-shadow: 1px 1px 0 var(--accent-shadow);
-  }
-
-  .btn--block { display: block; width: 100%; text-align: center; }
-
-  .btn__filename {
-    display: inline-block;
-    margin-top: 0.15rem;
-    font-size: 0.8em;
-    font-weight: 700;
-  }
+  .btn__copy { display: grid; gap: 0.08rem; text-align: center; }
+  .btn__filename { font-size: 0.78em; font-weight: 700; }
 
   .actions {
     display: none;
@@ -396,20 +515,22 @@
 
   .actions.is-visible { display: block; }
 
-  @media (max-width: 1091px) {
-    #results-section { max-width: var(--card-width); }
-    .results { grid-template-columns: minmax(0, 1fr); }
-    .card { max-width: none; }
-    .card__name { overflow: visible; text-overflow: clip; white-space: normal; }
+  @media (max-width: 820px) {
+    .rom-item__main { grid-template-columns: 1fr; }
+    .rom-item__download { width: min(100%, 380px); justify-self: start; }
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 700px) {
     .masthead { flex-direction: column-reverse; align-items: flex-start; }
     .sprite { width: 110px; height: 110px; }
+    .choice-grid { grid-template-columns: 1fr; }
+    .choice { border-left: 0; border-top: 2px solid var(--line); }
+    .choice:first-child { border-top: 0; }
+    .rom-item__details { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
   @media (prefers-reduced-motion: no-preference) {
-    .results.is-visible { animation: reveal 280ms ease-out; }
+    .rom-list.is-visible { animation: reveal 220ms ease-out; }
   }
 
   @keyframes reveal {
@@ -435,7 +556,7 @@
       <strong data-i18n="dropStrong">Drop PC6E01.iso here</strong>
       <small id="drop-help" data-i18n="dropSmall">or click to choose a file</small>
     </button>
-    <input class="visually-hidden" type="file" id="file-input" accept=".iso" aria-hidden="true">
+    <input class="visually-hidden" type="file" id="file-input" accept=".iso" aria-hidden="true" tabindex="-1">
   </section>
 
   <p class="status" id="status" role="status" aria-live="polite"></p>
@@ -443,11 +564,43 @@
   <section id="results-section" aria-labelledby="results-heading" hidden>
     <div class="filename-line" id="filename-line"></div>
     <h2 id="results-heading" tabindex="-1" data-i18n="resultsHeading">Extracted ROMs</h2>
-    <div class="results" id="results"></div>
+
+    <details class="settings-panel" id="output-settings">
+      <summary>
+        <span class="settings-panel__title" data-i18n="outputModeHeading">Output format</span>
+        <span class="settings-panel__current" id="output-mode-current">Multiboot ROM</span>
+      </summary>
+      <div class="settings-panel__body">
+        <p class="settings-panel__detail" data-i18n="outputModeDetail">The same format is applied to all three ROMs.</p>
+        <fieldset id="output-mode" class="output-fieldset">
+          <legend class="visually-hidden" data-i18n="outputModeHeading">Output format</legend>
+          <div class="choice-grid">
+            <label class="choice">
+              <input type="radio" name="output-mode" value="multiboot" checked>
+              <span class="choice__radio" aria-hidden="true"></span>
+              <span>
+                <span class="choice__title" data-i18n="multibootTitle">Multiboot ROM</span>
+                <span class="choice__detail" data-i18n="multibootDetail">For hardware and emulators that correctly support multiboot, such as mGBA.</span>
+              </span>
+            </label>
+            <label class="choice">
+              <input type="radio" name="output-mode" value="emulator">
+              <span class="choice__radio" aria-hidden="true"></span>
+              <span>
+                <span class="choice__title" data-i18n="emulatorTitle">Emulator-compatible ROM</span>
+                <span class="choice__detail" data-i18n="emulatorDetail">For GBA emulators that do not correctly support multiboot ROMs.</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+    </details>
+
+    <div class="rom-list" id="results" role="list"></div>
   </section>
 
   <div class="actions" id="actions">
-    <button class="btn" id="reset-btn" type="button" data-i18n="loadAnother">Load another disc</button>
+    <button class="btn" id="reset-btn" type="button" data-i18n="loadAnother">別のディスクを読み込む</button>
   </div>
 </main>
 
@@ -478,6 +631,7 @@
       language: "ENG",
       shinyHuntable: true,
       official: true,
+      patchId: "wishing-maker",
     },
     {
       name: "client.2003_1112.bin",
@@ -490,6 +644,7 @@
       language: "ENG",
       shinyHuntable: true,
       official: false,
+      patchId: "meteor",
     },
     {
       name: "sample0519.bin",
@@ -502,14 +657,16 @@
       language: "JPN",
       shinyHuntable: false,
       official: true,
+      patchId: "wishing-star",
+      supportsShinyUnlock: true,
     },
   ];
 
   const TRANSLATIONS = {
     ja: {
       pageTitle: "ジラーチ配布ディスク抽出ツール",
-      pageDescription: "ポケモンコロシアムのボーナスディスクからジラーチROMを抽出する、オフライン動作の単一HTMLツール。",
-      subtitle: "ポケモンコロシアムのボーナスディスクイメージ（PC6E01 Rev.00）から、3種類のジラーチROMを抽出します。ブラウザ上だけで動作します。",
+      pageDescription: "ポケモンコロシアムのボーナスディスクからジラーチROMを抽出し、用途に応じたパッチを適用して保存できる、オフライン動作の単一HTMLツール。",
+      subtitle: "ポケモンコロシアムのボーナスディスクイメージ（PC6E01 Rev.00）から、3種類のジラーチROMを抽出します。抽出後は用途に応じた出力形式を選び、そのまま保存できます。",
       loadHeading: "ディスクイメージを読み込む",
       dropStrong: "PC6E01.isoをここにドロップ",
       dropSmall: "またはクリックしてファイルを選択",
@@ -519,23 +676,42 @@
       langLabel: "表示言語を切り替える",
       official: "公式配布",
       unreleased: "未公開",
+      unofficialModified: "非公式改変",
       ot: "おや",
       tid: "TID",
       language: "言語",
-      shinyHunting: "色違い厳選",
+      shinyHunting: "色違い",
       possible: "可能",
       notPossible: "不可",
-      download: "ダウンロード",
+      possibleUnofficial: "可能（非公式）",
+      outputModeHeading: "出力形式",
+      outputModeDetail: "3種類すべてに同じ形式を適用します。",
+      multibootTitle: "マルチブートROM",
+      multibootDetail: "マルチブート用のロードアドレスを使用します。実機や、mGBAなどのマルチブート対応エミュレータ向けです。",
+      emulatorTitle: "マルチブート非対応エミュレータ用ROM",
+      emulatorDetail: "マルチブートROMを正しく読み込めないGBAエミュレータ向け。",
+      detailsLabel: "詳細",
+      outputModeSummaryMultiboot: "マルチブートROM",
+      outputModeSummaryEmulator: "エミュレータ互換ROM",
+      shinyUnlockTitle: "色違いロックを解除",
+      shinyUnlockDetail: "ネガイボシジラーチを色違いにできるようにします。",
+      shinyWarning: "警告：これは非公式改変です。公式配布では色違いのネガイボシジラーチは生成されません。",
+      downloadPatched: "パッチ済みROMをダウンロード",
+      downloadRaw: "生ROMをダウンロード",
+      patching: "パッチを適用中…",
+      patchFailed: "ROMのパッチ適用に失敗しました。",
+      hashMismatch: "抽出したROMが既知の未パッチROMと一致しません。",
       fileSize: (name, size) => `${name}（約${size} GB）`,
-      ariaDownload: (label, name) => `${label}のROM（${name}）をダウンロード`,
+      ariaDownloadPatched: (label, name) => `${label}のパッチ済みROM（${name}）をダウンロード`,
+      ariaDownloadRaw: (label, name) => `${label}の生ROM（${name}）をダウンロード`,
       notGameCube: "これはゲームキューブのディスクイメージではありません。",
       notPc6e01: "これはポケモンコロシアムのボーナスディスク（PC6E01 Rev.00）と一致しません。",
       unreadable: "このファイルを読み取れませんでした。別のファイルを試してください。",
     },
     en: {
       pageTitle: "Jirachi Distribution Disc Extractor",
-      pageDescription: "An offline, single-file HTML tool for extracting Jirachi ROMs from the Pokémon Colosseum Bonus Disc.",
-      subtitle: "Extracts the three Jirachi ROMs from a Pokémon Colosseum Bonus Disc image (PC6E01 Rev.00). Runs entirely in your browser.",
+      pageDescription: "An offline, single-file HTML tool for extracting Jirachi ROMs from the Pokémon Colosseum Bonus Disc and applying the appropriate compatibility patches.",
+      subtitle: "Extracts the three Jirachi ROMs from a Pokémon Colosseum Bonus Disc image (PC6E01 Rev.00). Choose the intended output format and save the result directly.",
       loadHeading: "Load a disc image",
       dropStrong: "Drop PC6E01.iso here",
       dropSmall: "or click to choose a file",
@@ -543,17 +719,36 @@
       loadAnother: "Load another disc",
       langButton: "日本語",
       langLabel: "Switch display language",
-      official: "Official",
+      official: "Official distribution",
       unreleased: "Unreleased",
+      unofficialModified: "Unofficial modification",
       ot: "OT",
       tid: "TID",
       language: "Language",
-      shinyHunting: "Shiny hunt",
-      possible: "Yes",
-      notPossible: "No",
-      download: "Download",
+      shinyHunting: "Shiny",
+      possible: "Possible",
+      notPossible: "Not possible",
+      possibleUnofficial: "Possible (unofficial)",
+      outputModeHeading: "Output format",
+      outputModeDetail: "The same format is applied to all three ROMs.",
+      multibootTitle: "Multiboot ROM",
+      multibootDetail: "Uses the multiboot load address. For hardware and emulators that support multiboot, such as mGBA.",
+      emulatorTitle: "ROM for non-multiboot emulators",
+      emulatorDetail: "For GBA emulators that do not correctly load multiboot ROMs.",
+      detailsLabel: "Details",
+      outputModeSummaryMultiboot: "Multiboot ROM",
+      outputModeSummaryEmulator: "Emulator-compatible ROM",
+      shinyUnlockTitle: "Remove the shiny lock",
+      shinyUnlockDetail: "Allows the Wishing Star Jirachi to be shiny.",
+      shinyWarning: "Warning: this is an unofficial modification. The official distribution does not produce shiny Wishing Star Jirachi.",
+      downloadPatched: "Download patched ROM",
+      downloadRaw: "Download raw ROM",
+      patching: "Applying patch…",
+      patchFailed: "Failed to patch the ROM.",
+      hashMismatch: "The extracted ROM does not match a known unpatched ROM.",
       fileSize: (name, size) => `${name} (about ${size} GB)`,
-      ariaDownload: (label, name) => `Download the ${label} ROM (${name})`,
+      ariaDownloadPatched: (label, name) => `Download the patched ${label} ROM (${name})`,
+      ariaDownloadRaw: (label, name) => `Download the raw ${label} ROM (${name})`,
       notGameCube: "This is not a GameCube disc image.",
       notPc6e01: "This does not match the Pokémon Colosseum Bonus Disc (PC6E01 Rev.00).",
       unreadable: "This file could not be read. Try another file.",
@@ -568,10 +763,55 @@
     return supportedLanguage && /^ja(?:-|$)/i.test(supportedLanguage) ? "ja" : "en";
   }
 
+  const PATCH_DEFINITIONS = {
+    "wishing-star": {
+      sha256: "544719a8a96439ef56eee84afebdfa7ebe1abbb7a1e93f0e21f98fc5365b8f27",
+      compressedOut: 0x02018000,
+      checks: [
+        [0x0201E398, 0x0000E03A, 0xE1C010B0],
+        [0x0201F5F6, 0x00002000, 0xE1C010B0],
+      ],
+      shinyCheck: [0x0201E9E2, 0x000046C0, 0xE1C010B0],
+    },
+    meteor: {
+      sha256: "f6c0110162aa48c13707cbb21ba612a4833820eaef538335d82f2d54e6cceeb8",
+      compressedOut: 0x02010000,
+      checks: [
+        [0x02010378, 0x00000000, 0xE5801000],
+        [0x0201437C, 0x00002000, 0xE1C010B0],
+        [0x02012EEC, 0x47702011, 0xE5801000],
+      ],
+    },
+    "wishing-maker": {
+      sha256: "a78161cc15f356e9e356619ab4701be3e2c5270075129c33bc35f2033402681f",
+      compressedOut: 0x02010000,
+      checks: [
+        [0x0201036C, 0x00000000, 0xE5801000],
+        [0x02014CEC, 0x00002000, 0xE1C010B0],
+        [0x02012EC4, 0x47702011, 0xE5801000],
+      ],
+    },
+  };
+
+  const LDR_R0_TEMPLATE = 0xE59F0014;
+  const LDR_R1_TEMPLATE = 0xE59F1014;
+  const LDR_LR_TEMPLATE = 0xE59FE00C;
+  const BX_LR = 0xE12FFF1E;
+  const R0_TO_R1_MASK = LDR_R0_TEMPLATE ^ LDR_R1_TEMPLATE;
+  const OFF_ADDR_FIXUP = 0x154;
+  const OFF_CHECKS = 0x160;
+  const COMPRESSED_IN_MULTIBOOT = 0x02000278;
+  const COMPRESSED_IN_EMULATOR = 0x08000278;
+
   let locale = detectLocale();
   let currentFile = null;
   let currentStatusKey = null;
-  let downloadUrls = [];
+  let currentRomFiles = [];
+  let rawDownloadUrls = [];
+  const outputState = { mode: "multiboot" };
+  let shinyUnlocked = false;
+  let processGeneration = 0;
+  const openDisclosureIds = new Set();
 
   const translate = (key, ...args) => {
     const value = TRANSLATIONS[locale][key];
@@ -591,7 +831,20 @@
     resetButton: document.getElementById("reset-btn"),
     languageButton: document.getElementById("lang-toggle"),
     description: document.querySelector('meta[name="description"]'),
+    outputMode: document.getElementById("output-mode"),
+    outputModeCurrent: document.getElementById("output-mode-current"),
   };
+
+  updateOutputSummary();
+
+  const outputModeInputs = Array.from(document.querySelectorAll('#output-mode input[name="output-mode"]'));
+  outputModeInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      outputState.mode = input.value === "emulator" ? "emulator" : "multiboot";
+      updateOutputSummary();
+      updateRenderedRomItems();
+    });
+  });
 
   function formatFileSize(bytes) {
     return (bytes / 1_000_000_000).toFixed(2);
@@ -600,6 +853,42 @@
   function setStatus(message) {
     elements.status.textContent = message || "";
     elements.status.classList.toggle("is-visible", Boolean(message));
+  }
+
+  function updateRenderedRomText(fileInfo) {
+    const item = elements.results.querySelector(`[data-patch-id="${CSS.escape(fileInfo.patchId)}"]`);
+    if (!item) return;
+
+    const name = item.querySelector("[data-role='rom-name']");
+    if (name) name.textContent = locale === "ja" ? fileInfo.labelJa : fileInfo.labelEn;
+
+    const summary = item.querySelector(".rom-item__disclosure > summary");
+    if (summary) {
+      summary.setAttribute("aria-label", locale === "ja"
+        ? `${fileInfo.labelJa}の詳細`
+        : `Details for ${fileInfo.labelEn}`);
+    }
+
+    const patchedButton = item.querySelector("[data-role='patched-download']");
+    if (patchedButton && !patchedButton.disabled) {
+      const filename = makePatchedFilename(fileInfo, {
+        mode: outputState.mode,
+        shinyUnlocked: fileInfo.supportsShinyUnlock && shinyUnlocked,
+      });
+      const label = locale === "ja" ? fileInfo.labelJa : fileInfo.labelEn;
+      patchedButton.setAttribute("aria-label", translate("ariaDownloadPatched", label, filename));
+    }
+
+    const rawLink = item.querySelector("[data-role='raw-download']");
+    if (rawLink) {
+      rawLink.setAttribute("aria-label", translate(
+        "ariaDownloadRaw",
+        locale === "ja" ? fileInfo.labelJa : fileInfo.labelEn,
+        fileInfo.name,
+      ));
+    }
+
+    updateRenderedRomItemState(item, fileInfo);
   }
 
   function updateLocalizedText() {
@@ -613,6 +902,8 @@
 
     elements.languageButton.textContent = translate("langButton");
     elements.languageButton.setAttribute("aria-label", translate("langLabel"));
+    elements.outputMode.setAttribute("aria-label", translate("outputModeHeading"));
+    updateOutputSummary();
 
     if (currentFile && elements.filenameLine.classList.contains("is-visible")) {
       elements.filenameLine.textContent = translate("fileSize", currentFile.name, formatFileSize(currentFile.size));
@@ -622,13 +913,7 @@
       setStatus(translate(currentStatusKey));
     }
 
-    if (!elements.resultsSection.hidden && elements.results.childElementCount) {
-      const existingFiles = ROM_TARGETS.map((target, index) => ({
-        ...target,
-        url: downloadUrls[index],
-      }));
-      renderResults(existingFiles, false);
-    }
+    currentRomFiles.forEach(updateRenderedRomText);
   }
 
   async function readBytes(file, offset, size) {
@@ -647,6 +932,83 @@
   async function sha256Hex(bytes) {
     const digest = await crypto.subtle.digest("SHA-256", bytes);
     return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  function writeUint32LE(bytes, offset, value) {
+    new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength).setUint32(offset, value >>> 0, true);
+  }
+
+  function retarget(word, instructionOffset, target) {
+    return ((word & ~0xFFF) | ((target - instructionOffset - 8) & 0xFFF)) >>> 0;
+  }
+
+  function asR1(ldrR0Word) {
+    return (ldrR0Word ^ R0_TO_R1_MASK) >>> 0;
+  }
+
+  function applyRelocatedPatch(bytes, checks, compressedOut) {
+    const n = checks.length;
+    const literalPool = OFF_CHECKS + (n * 3 + 2) * 4;
+    const jump = OFF_CHECKS + n * 3 * 4;
+
+    writeUint32LE(bytes, OFF_ADDR_FIXUP, retarget(LDR_R0_TEMPLATE, OFF_ADDR_FIXUP, literalPool));
+    writeUint32LE(bytes, OFF_ADDR_FIXUP + 4, asR1(
+      retarget(LDR_R0_TEMPLATE, OFF_ADDR_FIXUP + 4, literalPool + 4),
+    ));
+
+    let literal = literalPool + 8;
+    let block = OFF_CHECKS;
+    for (const [targetAddress, patchValue, storeWord] of checks) {
+      writeUint32LE(bytes, block, retarget(LDR_R0_TEMPLATE, block, literal));
+      writeUint32LE(bytes, block + 4, asR1(retarget(LDR_R0_TEMPLATE, block + 4, literal + 4)));
+      writeUint32LE(bytes, block + 8, storeWord);
+      writeUint32LE(bytes, literal, targetAddress);
+      writeUint32LE(bytes, literal + 4, patchValue);
+      block += 12;
+      literal += 8;
+    }
+
+    writeUint32LE(bytes, jump, retarget(LDR_LR_TEMPLATE, jump, literalPool + 4));
+    writeUint32LE(bytes, jump + 4, BX_LR);
+    writeUint32LE(bytes, literalPool + 4, compressedOut);
+
+    return literalPool;
+  }
+
+  async function patchRom(fileInfo, options) {
+    const definition = PATCH_DEFINITIONS[fileInfo.patchId];
+    if (!definition) throw new Error("patch-definition");
+
+    if (fileInfo.sha256 !== definition.sha256) {
+      throw new Error("hash-mismatch");
+    }
+
+    const rom = new Uint8Array(fileInfo.bytes);
+    const checks = definition.checks.slice();
+    if (fileInfo.supportsShinyUnlock && options.shinyUnlocked) {
+      checks.push(definition.shinyCheck);
+    }
+
+    const literalPool = applyRelocatedPatch(
+      rom,
+      checks,
+      definition.compressedOut,
+    );
+
+    writeUint32LE(
+      rom,
+      literalPool,
+      options.mode === "multiboot" ? COMPRESSED_IN_MULTIBOOT : COMPRESSED_IN_EMULATOR,
+    );
+
+    return rom;
+  }
+
+  function makePatchedFilename(fileInfo, options) {
+    const stem = fileInfo.name.replace(/\.bin$/i, "");
+    const shiny = fileInfo.supportsShinyUnlock && options.shinyUnlocked ? "-shiny" : "";
+    const target = options.mode === "multiboot" ? "multiboot" : "emulator";
+    return `${stem}${shiny}-${target}.bin`;
   }
 
   async function readFileTableEntry(file, fileTableOffset, entryIndex) {
@@ -683,87 +1045,332 @@
     const extractedFiles = [];
     for (const target of ROM_TARGETS) {
       const bytes = await readBytes(file, target.offset, target.size);
-      const blob = new Blob([bytes], { type: "application/octet-stream" });
-      extractedFiles.push({ ...target, url: URL.createObjectURL(blob) });
+      const hash = await sha256Hex(bytes);
+      const expected = PATCH_DEFINITIONS[target.patchId]?.sha256;
+      if (hash !== expected) throw new Error("hash-mismatch");
+      extractedFiles.push({
+        ...target,
+        bytes,
+        sha256: hash,
+      });
     }
     return extractedFiles;
   }
 
-  function appendDefinitionList(parent, label, value, className = "") {
-    const list = document.createElement("dl");
-    if (className) list.className = className;
-    const term = document.createElement("dt");
-    const description = document.createElement("dd");
-    term.textContent = label;
-    description.textContent = value;
-    list.append(term, description);
-    parent.appendChild(list);
-    return list;
+  function createDownloadButton(fileInfo, label) {
+    const button = document.createElement("button");
+    button.className = "btn";
+    button.type = "button";
+    button.dataset.role = "patched-download";
+    button.setAttribute("aria-label", translate("ariaDownloadPatched", label, makePatchedFilename(fileInfo, {
+      mode: outputState.mode,
+      shinyUnlocked: fileInfo.supportsShinyUnlock && shinyUnlocked,
+    })));
+
+    const copy = document.createElement("span");
+    copy.className = "btn__copy";
+    const title = document.createElement("span");
+    title.dataset.role = "patched-download-title";
+    title.textContent = translate("downloadPatched");
+    const filename = document.createElement("span");
+    filename.className = "btn__filename";
+    filename.textContent = makePatchedFilename(fileInfo, {
+      shinyUnlocked: fileInfo.supportsShinyUnlock && shinyUnlocked,
+    });
+    copy.append(title, filename);
+    button.appendChild(copy);
+
+    button.addEventListener("click", async () => {
+      const options = {
+        mode: outputState.mode,
+        shinyUnlocked: fileInfo.supportsShinyUnlock && shinyUnlocked,
+      };
+      const buttonTitle = button.querySelector(".btn__copy > span:first-child");
+      const buttonFilename = button.querySelector(".btn__filename");
+      button.disabled = true;
+      button.setAttribute("aria-busy", "true");
+      if (buttonTitle) buttonTitle.textContent = translate("patching");
+      if (buttonFilename) buttonFilename.hidden = true;
+
+      try {
+        const patchedBytes = await patchRom(fileInfo, options);
+        const filename = makePatchedFilename(fileInfo, options);
+        const blob = new Blob([patchedBytes], { type: "application/octet-stream" });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = filename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        currentStatusKey = null;
+        setStatus("");
+      } catch (error) {
+        currentStatusKey = error instanceof Error && error.message === "hash-mismatch"
+          ? "hashMismatch"
+          : "patchFailed";
+        setStatus(translate(currentStatusKey));
+      } finally {
+        button.disabled = false;
+        button.removeAttribute("aria-busy");
+        if (buttonTitle) buttonTitle.textContent = translate("downloadPatched");
+        if (buttonFilename) {
+          buttonFilename.hidden = false;
+          buttonFilename.textContent = makePatchedFilename(fileInfo, options);
+        }
+        button.setAttribute("aria-label", translate(
+          "ariaDownloadPatched",
+          locale === "ja" ? fileInfo.labelJa : fileInfo.labelEn,
+          makePatchedFilename(fileInfo, options),
+        ));
+        updateRenderedRomItems();
+      }
+    });
+
+    return button;
   }
 
-  function createDownloadLink(fileInfo, label, filename) {
+  function createRawDownloadLink(fileInfo, label) {
     const link = document.createElement("a");
-    link.className = "btn btn--block";
-    link.href = fileInfo.url;
-    link.download = filename;
-    link.setAttribute("aria-label", translate("ariaDownload", label, filename));
-
-    const actionText = document.createTextNode(translate("download"));
-    const lineBreak = document.createElement("br");
-    const filenameSpan = document.createElement("span");
-    filenameSpan.className = "btn__filename";
-    filenameSpan.textContent = filename;
-    link.append(actionText, lineBreak, filenameSpan);
+    link.className = "raw-download";
+    link.href = fileInfo.rawUrl;
+    link.download = fileInfo.name;
+    link.textContent = translate("downloadRaw");
+    link.dataset.role = "raw-download";
+    link.setAttribute("aria-label", translate("ariaDownloadRaw", label, fileInfo.name));
     return link;
   }
 
-  function createRomCard(fileInfo) {
-    const article = document.createElement("article");
-    article.className = "card";
+  function createFact(label, value, className = "") {
+    const list = document.createElement("dl");
+    list.className = `fact${className ? ` ${className}` : ""}`;
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const description = document.createElement("dd");
+    description.textContent = value;
+    list.append(term, description);
+    return list;
+  }
+
+  function updateDisclosureLabel(disclosure) {
+    const label = disclosure.querySelector("[data-role='disclosure-label']");
+    if (label) label.textContent = translate("detailsLabel");
+  }
+
+  function getRomState(fileInfo) {
+    const unofficial = fileInfo.supportsShinyUnlock && shinyUnlocked;
+    const shinyValue = unofficial
+      ? translate("possibleUnofficial")
+      : fileInfo.shinyHuntable
+        ? translate("possible")
+        : translate("notPossible");
+    return { unofficial, shinyValue };
+  }
+
+  function updateRenderedRomItemState(item, fileInfo) {
+    const { unofficial, shinyValue } = getRomState(fileInfo);
+    const badge = item.querySelector("[data-role='status-badge']");
+    if (badge) {
+      badge.className = unofficial
+        ? "badge badge--unofficial"
+        : fileInfo.official
+          ? "badge"
+          : "badge badge--muted";
+      badge.textContent = unofficial ? translate("unofficialModified") : fileInfo.official ? translate("official") : translate("unreleased");
+    }
+
+    const shiny = item.querySelector("[data-role='shiny-value']");
+    if (shiny) {
+      shiny.textContent = shinyValue;
+      shiny.classList.remove("shiny--possible", "shiny--locked", "shiny--unofficial");
+      shiny.classList.add(unofficial ? "shiny--unofficial" : fileInfo.shinyHuntable ? "shiny--possible" : "shiny--locked");
+    }
+
+    const warning = item.querySelector("[data-role='shiny-warning']");
+    if (warning) warning.hidden = !unofficial;
+
+    const button = item.querySelector("[data-role='patched-download']");
+    if (button) {
+      const filename = makePatchedFilename(fileInfo, {
+        mode: outputState.mode,
+        shinyUnlocked: fileInfo.supportsShinyUnlock && shinyUnlocked,
+      });
+      const title = button.querySelector("[data-role='patched-download-title']");
+      const filenameElement = button.querySelector(".btn__filename");
+      if (title) title.textContent = button.disabled ? translate("patching") : translate("downloadPatched");
+      if (filenameElement && !filenameElement.hidden) filenameElement.textContent = filename;
+      button.setAttribute("aria-label", translate(
+        "ariaDownloadPatched",
+        locale === "ja" ? fileInfo.labelJa : fileInfo.labelEn,
+        filename,
+      ));
+    }
+
+    const rawLink = item.querySelector("[data-role='raw-download']");
+    if (rawLink) {
+      rawLink.textContent = translate("downloadRaw");
+      rawLink.setAttribute("aria-label", translate(
+        "ariaDownloadRaw",
+        locale === "ja" ? fileInfo.labelJa : fileInfo.labelEn,
+        fileInfo.name,
+      ));
+    }
+
+    const checkbox = item.querySelector("input[type='checkbox']");
+    if (checkbox) checkbox.checked = shinyUnlocked;
+  }
+
+  function updateRenderedRomItems() {
+    currentRomFiles.forEach((fileInfo) => {
+      const item = elements.results.querySelector(`[data-patch-id="${CSS.escape(fileInfo.patchId)}"]`);
+      if (item) updateRenderedRomItemState(item, fileInfo);
+    });
+  }
+
+  function createRomItem(fileInfo) {
+    const item = document.createElement("article");
+    item.className = "rom-item";
+    item.setAttribute("role", "listitem");
+    item.dataset.patchId = fileInfo.patchId;
+
+    const main = document.createElement("div");
+    main.className = "rom-item__main";
 
     const heading = document.createElement("div");
-    heading.className = "card__heading";
-
+    heading.className = "rom-item__heading";
     const name = document.createElement("h3");
-    name.className = "card__name";
+    name.className = "rom-item__name";
+    name.dataset.role = "rom-name";
     name.textContent = locale === "ja" ? fileInfo.labelJa : fileInfo.labelEn;
 
     const badge = document.createElement("span");
-    badge.className = fileInfo.official ? "badge" : "badge badge--muted";
-    badge.textContent = fileInfo.official ? translate("official") : translate("unreleased");
+    badge.dataset.role = "status-badge";
+    const unofficial = fileInfo.supportsShinyUnlock && shinyUnlocked;
+    badge.className = unofficial ? "badge badge--unofficial" : fileInfo.official ? "badge" : "badge badge--muted";
+    badge.textContent = unofficial ? translate("unofficialModified") : fileInfo.official ? translate("official") : translate("unreleased");
     heading.append(name, badge);
 
-    const facts = document.createElement("div");
-    facts.className = "card__facts";
-    appendDefinitionList(facts, translate("ot"), fileInfo.ot);
-    appendDefinitionList(facts, translate("tid"), fileInfo.tid);
-
-    const cta = document.createElement("div");
-    cta.className = "card__cta";
-
-    const status = document.createElement("div");
-    status.className = "card__status";
-    appendDefinitionList(status, translate("language"), fileInfo.language, "card__language");
-    const shiny = appendDefinitionList(status, translate("shinyHunting"), fileInfo.shinyHuntable ? translate("possible") : translate("notPossible"), "card__shiny");
-    shiny.querySelector("dd").classList.add(fileInfo.shinyHuntable ? "lock--huntable" : "lock--locked");
-
-    const filename = fileInfo.name;
+    const download = document.createElement("div");
+    download.className = "rom-item__download";
     const label = locale === "ja" ? fileInfo.labelJa : fileInfo.labelEn;
-    cta.append(status, createDownloadLink(fileInfo, label, filename));
-    article.append(heading, facts, cta);
-    return article;
+    download.append(createDownloadButton(fileInfo, label));
+    main.append(heading, download);
+    item.append(main);
+
+    const disclosure = document.createElement("details");
+    disclosure.className = "rom-item__disclosure";
+    disclosure.open = openDisclosureIds.has(fileInfo.patchId);
+
+    const summary = document.createElement("summary");
+    summary.setAttribute("aria-label", locale === "ja"
+      ? `${fileInfo.labelJa}の詳細`
+      : `Details for ${fileInfo.labelEn}`);
+    const summaryLabel = document.createElement("span");
+    summaryLabel.dataset.role = "disclosure-label";
+    summary.appendChild(summaryLabel);
+    disclosure.appendChild(summary);
+    updateDisclosureLabel(disclosure);
+
+    disclosure.addEventListener("toggle", () => {
+      if (disclosure.open) openDisclosureIds.add(fileInfo.patchId);
+      else openDisclosureIds.delete(fileInfo.patchId);
+      updateDisclosureLabel(disclosure);
+    });
+
+    const details = document.createElement("div");
+    details.className = "rom-item__details";
+
+    const otFact = createFact(translate("ot"), fileInfo.ot);
+    otFact.querySelector("dt").dataset.i18n = "ot";
+    const tidFact = createFact(translate("tid"), String(fileInfo.tid));
+    tidFact.querySelector("dt").dataset.i18n = "tid";
+    const languageFact = createFact(translate("language"), fileInfo.language);
+    languageFact.querySelector("dt").dataset.i18n = "language";
+    details.append(otFact, tidFact, languageFact);
+
+    const { unofficial: stateUnofficial, shinyValue } = getRomState(fileInfo);
+    const shinyFact = createFact(translate("shinyHunting"), shinyValue);
+    shinyFact.querySelector("dt").dataset.i18n = "shinyHunting";
+    shinyFact.querySelector("dd").dataset.role = "shiny-value";
+    shinyFact.querySelector("dd").classList.add(
+      stateUnofficial ? "shiny--unofficial" : fileInfo.shinyHuntable ? "shiny--possible" : "shiny--locked",
+    );
+    details.append(shinyFact);
+
+    if (fileInfo.supportsShinyUnlock) {
+      const options = document.createElement("div");
+      options.className = "rom-item__options";
+
+      const checkChoice = document.createElement("label");
+      checkChoice.className = "check-choice";
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = shinyUnlocked;
+      checkbox.setAttribute("aria-describedby", `shiny-detail-${fileInfo.patchId} shiny-warning-${fileInfo.patchId}`);
+
+      const copy = document.createElement("span");
+      const title = document.createElement("span");
+      title.className = "check-choice__title";
+      title.dataset.i18n = "shinyUnlockTitle";
+      title.textContent = translate("shinyUnlockTitle");
+      const detail = document.createElement("span");
+      detail.className = "check-choice__detail";
+      detail.dataset.i18n = "shinyUnlockDetail";
+      detail.id = `shiny-detail-${fileInfo.patchId}`;
+      detail.textContent = translate("shinyUnlockDetail");
+      copy.append(title, detail);
+      checkChoice.append(checkbox, copy);
+      options.appendChild(checkChoice);
+
+      const warning = document.createElement("p");
+      warning.className = "patch-warning";
+      warning.dataset.role = "shiny-warning";
+      warning.id = `shiny-warning-${fileInfo.patchId}`;
+      warning.hidden = !shinyUnlocked;
+      warning.setAttribute("role", "alert");
+      warning.dataset.i18n = "shinyWarning";
+      warning.textContent = translate("shinyWarning");
+      options.appendChild(warning);
+
+      checkbox.addEventListener("change", () => {
+        shinyUnlocked = checkbox.checked;
+        if (checkbox.checked) {
+          openDisclosureIds.add(fileInfo.patchId);
+          disclosure.open = true;
+        }
+        updateRenderedRomItemState(item, fileInfo);
+      });
+
+      details.appendChild(options);
+    }
+
+    details.appendChild(createRawDownloadLink(fileInfo, label));
+    disclosure.appendChild(details);
+    item.appendChild(disclosure);
+    return item;
   }
 
-  function renderResults(extractedFiles, focusHeading) {
-    elements.results.replaceChildren(...extractedFiles.map(createRomCard));
+  function updateOutputSummary() {
+    if (!elements.outputModeCurrent) return;
+    elements.outputModeCurrent.textContent = outputState.mode === "multiboot"
+      ? translate("outputModeSummaryMultiboot")
+      : translate("outputModeSummaryEmulator");
+  }
+
+  function renderResults(focusHeading) {
+    elements.results.replaceChildren(...currentRomFiles.map(createRomItem));
     elements.results.classList.add("is-visible");
     elements.resultsSection.hidden = false;
+    updateOutputSummary();
     if (focusHeading) elements.resultsHeading.focus();
   }
 
-  function resetInterface() {
-    downloadUrls.forEach((url) => URL.revokeObjectURL(url));
-    downloadUrls = [];
+  function resetInterface(options = {}) {
+    if (options.invalidate !== false) processGeneration += 1;
+    rawDownloadUrls.forEach((url) => URL.revokeObjectURL(url));
+    rawDownloadUrls = [];
+    currentRomFiles = [];
     elements.results.replaceChildren();
     elements.results.classList.remove("is-visible");
     elements.resultsSection.hidden = true;
@@ -773,10 +1380,17 @@
     elements.fileInput.value = "";
     currentFile = null;
     currentStatusKey = null;
+    outputState.mode = "multiboot";
+    const defaultOutput = document.querySelector('#output-mode input[value="multiboot"]');
+    if (defaultOutput) defaultOutput.checked = true;
+    shinyUnlocked = false;
+    openDisclosureIds.clear();
+    updateOutputSummary();
   }
 
   async function processDiscImage(file) {
-    resetInterface();
+    const generation = ++processGeneration;
+    resetInterface({ invalidate: false });
     currentFile = file;
     elements.loadSection.hidden = true;
     elements.filenameLine.textContent = translate("fileSize", file.name, formatFileSize(file.size));
@@ -784,15 +1398,40 @@
 
     try {
       await verifyDiscImage(file);
-      const extractedFiles = await extractRomFiles(file);
-      downloadUrls = extractedFiles.map((fileInfo) => fileInfo.url);
-      renderResults(extractedFiles, true);
+      if (generation !== processGeneration) return;
+
+      currentRomFiles = await extractRomFiles(file);
+      if (generation !== processGeneration) return;
+
+      currentRomFiles.forEach((fileInfo) => {
+        const rawBlob = new Blob([fileInfo.bytes], { type: "application/octet-stream" });
+        fileInfo.rawUrl = URL.createObjectURL(rawBlob);
+        rawDownloadUrls.push(fileInfo.rawUrl);
+      });
+
+      if (generation !== processGeneration) {
+        rawDownloadUrls.forEach((url) => URL.revokeObjectURL(url));
+        rawDownloadUrls = [];
+        return;
+      }
+
+      renderResults(true);
     } catch (error) {
+      if (generation !== processGeneration) return;
       const reason = error instanceof Error ? error.message : "unreadable";
-      currentStatusKey = reason === "not-gamecube" ? "notGameCube" : reason === "not-pc6e01" ? "notPc6e01" : "unreadable";
+      currentStatusKey =
+        reason === "not-gamecube"
+          ? "notGameCube"
+          : reason === "not-pc6e01"
+            ? "notPc6e01"
+            : reason === "hash-mismatch"
+              ? "hashMismatch"
+              : "unreadable";
       setStatus(translate(currentStatusKey));
     } finally {
-      elements.actions.classList.add("is-visible");
+      if (generation === processGeneration) {
+        elements.actions.classList.add("is-visible");
+      }
     }
   }
 

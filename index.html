@@ -609,15 +609,15 @@
 (() => {
   "use strict";
 
-  const DISC_MAGIC_OFFSET = 0x1C;
+  const OFF_DISC_MAGIC = 0x1C;
   const DISC_MAGIC = 0xC2339F3D;
-  const FST_OFFSET_FIELD = 0x424;
-  const MAIN_FST_OFFSET = 0x000DBE00;
+  const OFF_FST_FIELD = 0x424;
+  const OFF_MAIN_FST = 0x000DBE00;
   const MAIN_FST_SIZE = 0x1BB;
   const MAIN_FST_SHA256 = "24ef3c366c733e3e80ac144aef246cb95579469c7f99e41bfae322d666870802";
   const FST_ENTRY_SIZE = 12;
   const TGC_ENTRY_INDEX = 16;
-  const TGC_OFFSET = 0x35108000;
+  const OFF_TGC = 0x35108000;
   const TGC_MAGIC = 0xAE0F38A2;
 
   const ROM_TARGETS = [
@@ -1024,8 +1024,8 @@
     return `${stem}${shiny}-${target}.bin`;
   }
 
-  async function readFileTableEntry(file, fileTableOffset, entryIndex) {
-    const entryOffset = fileTableOffset + entryIndex * FST_ENTRY_SIZE;
+  async function readFstEntry(file, fstOffset, entryIndex) {
+    const entryOffset = fstOffset + entryIndex * FST_ENTRY_SIZE;
     const bytes = await readBytes(file, entryOffset, FST_ENTRY_SIZE);
     const isDirectory = bytes[0] !== 0;
     const fileOffset = new DataView(bytes.buffer, bytes.byteOffset, FST_ENTRY_SIZE).getUint32(4, false);
@@ -1033,20 +1033,20 @@
   }
 
   async function verifyDiscImage(file) {
-    const discMagic = await readUint32BE(file, DISC_MAGIC_OFFSET);
+    const discMagic = await readUint32BE(file, OFF_DISC_MAGIC);
     if (discMagic !== DISC_MAGIC) throw new Error("not-gamecube");
 
-    const fileTableOffset = await readUint32BE(file, FST_OFFSET_FIELD);
-    if (fileTableOffset !== MAIN_FST_OFFSET) throw new Error("not-pc6e01");
+    const fstOffset = await readUint32BE(file, OFF_FST_FIELD);
+    if (fstOffset !== OFF_MAIN_FST) throw new Error("not-pc6e01");
 
-    const fileTableBytes = await readBytes(file, MAIN_FST_OFFSET, MAIN_FST_SIZE);
-    const fileTableHash = await sha256Hex(fileTableBytes);
-    if (fileTableHash !== MAIN_FST_SHA256) throw new Error("not-pc6e01");
+    const fstBytes = await readBytes(file, OFF_MAIN_FST, MAIN_FST_SIZE);
+    const fstHash = await sha256Hex(fstBytes);
+    if (fstHash !== MAIN_FST_SHA256) throw new Error("not-pc6e01");
 
-    const entry = await readFileTableEntry(file, MAIN_FST_OFFSET, TGC_ENTRY_INDEX);
-    if (entry.isDirectory || entry.fileOffset !== TGC_OFFSET) throw new Error("not-pc6e01");
+    const entry = await readFstEntry(file, OFF_MAIN_FST, TGC_ENTRY_INDEX);
+    if (entry.isDirectory || entry.fileOffset !== OFF_TGC) throw new Error("not-pc6e01");
 
-    const tgcMagic = await readUint32BE(file, TGC_OFFSET);
+    const tgcMagic = await readUint32BE(file, OFF_TGC);
     if (tgcMagic !== TGC_MAGIC) throw new Error("not-pc6e01");
   }
 

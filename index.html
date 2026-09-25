@@ -815,7 +815,7 @@
       sha256: "f6c0110162aa48c13707cbb21ba612a4833820eaef538335d82f2d54e6cceeb8",
       checks: [
         // Patch out the GameCube handshake.
-        [0x02010378, 0x00000000, STORE_WORD], // movs r0, r0; movs r0, r0
+        [0x02010378, 0x46C046C0, STORE_WORD], // nop; nop
         // Patch out the chipset check.
         [0x0201437C, 0x00002000, STORE_HALFWORD], // movs r0, #0x0
         // Set game code to US Ruby/Sapphire.
@@ -826,7 +826,7 @@
       sha256: "a78161cc15f356e9e356619ab4701be3e2c5270075129c33bc35f2033402681f",
       checks: [
         // Patch out the GameCube handshake.
-        [0x0201036C, 0x00000000, STORE_WORD], // movs r0, r0; movs r0, r0
+        [0x0201036C, 0x46C046C0, STORE_WORD], // nop; nop
         // Patch out the chipset check.
         [0x02014CEC, 0x00002000, STORE_HALFWORD], // movs r0, #0x0
         // Set game code to US Ruby/Sapphire.

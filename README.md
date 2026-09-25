@@ -26,17 +26,17 @@ Open <https://healache.github.io/jirachi-bonus-disc-extractor/>.
 ## Shiny
 
 WISHMKR and METEOR shipped with broken shiny locks and can be hunted on retail.
-Wishing Star's lock works, so it needs the unlock patch.
+ネガイボシ's lock works, so it needs the unlock patch.
 
 | ROM                     | Odds        | Approx.   |
 | ----------------------- | ----------- | --------- |
 | WISHMKR                 | 9 / 65,536  | 1 / 7,282 |
 | METEOR                  | 10 / 65,536 | 1 / 6,554 |
-| Wishing Star (unlocked) | 7 / 65,536  | 1 / 9,362 |
+| ネガイボシ   (unlocked) | 7 / 65,536  | 1 / 9,362 |
 
 The patch replaces the shiny-check branch with a NOP.
 
-Wishing Star is seeded from the GBA's RTC and has no per-save redemption limit.
+ネガイボシ is seeded from the GBA's RTC and has no per-save redemption limit.
 Unlocking it is the only way to get a Japanese-origin shiny Jirachi from these
 ROMs, as WISHMKR and METEOR are English-only.
 

@@ -796,29 +796,41 @@
     return supportedLanguage && /^ja(?:-|$)/i.test(supportedLanguage) ? "ja" : "en";
   }
 
+  const STORE_WORD = 0xE5801000; // str r1, [r0]
+  const STORE_HALFWORD = 0xE1C010B0; // strh r1, [r0]
+
   const PATCH_DEFINITIONS = {
     "wishing-star": {
       sha256: "544719a8a96439ef56eee84afebdfa7ebe1abbb7a1e93f0e21f98fc5365b8f27",
       checks: [
-        [0x0201E398, 0x0000E03A, 0xE1C010B0],
-        [0x0201F5F6, 0x00002000, 0xE1C010B0],
+        // Patch out the GameCube handshake.
+        [0x0201E398, 0x0000E03A, STORE_HALFWORD], // b 0x0201E410
+        // Patch out the chipset check.
+        [0x0201F5F6, 0x00002000, STORE_HALFWORD], // movs r0, #0x0
       ],
-      shinyCheck: [0x0201E9E2, 0x000046C0, 0xE1C010B0],
+      // Patch out the shiny check.
+      shinyCheck: [0x0201E9E2, 0x000046C0, STORE_HALFWORD], // nop
     },
     meteor: {
       sha256: "f6c0110162aa48c13707cbb21ba612a4833820eaef538335d82f2d54e6cceeb8",
       checks: [
-        [0x02010378, 0x00000000, 0xE5801000],
-        [0x0201437C, 0x00002000, 0xE1C010B0],
-        [0x02012EEC, 0x47702011, 0xE5801000],
+        // Patch out the GameCube handshake.
+        [0x02010378, 0x00000000, STORE_WORD], // movs r0, r0; movs r0, r0
+        // Patch out the chipset check.
+        [0x0201437C, 0x00002000, STORE_HALFWORD], // movs r0, #0x0
+        // Set game code to US Ruby/Sapphire.
+        [0x02012EEC, 0x47702011, STORE_WORD], // movs r0, #0x11; bx lr
       ],
     },
     wishmaker: {
       sha256: "a78161cc15f356e9e356619ab4701be3e2c5270075129c33bc35f2033402681f",
       checks: [
-        [0x0201036C, 0x00000000, 0xE5801000],
-        [0x02014CEC, 0x00002000, 0xE1C010B0],
-        [0x02012EC4, 0x47702011, 0xE5801000],
+        // Patch out the GameCube handshake.
+        [0x0201036C, 0x00000000, STORE_WORD], // movs r0, r0; movs r0, r0
+        // Patch out the chipset check.
+        [0x02014CEC, 0x00002000, STORE_HALFWORD], // movs r0, #0x0
+        // Set game code to US Ruby/Sapphire.
+        [0x02012EC4, 0x47702011, STORE_WORD], // movs r0, #0x11; bx lr
       ],
     },
   };

@@ -1,4 +1,4 @@
-# Jirachi Distribution Disc Extractor
+# Jirachi Bonus Disc Extractor
 
 English | [日本語](README.jp.md)
 

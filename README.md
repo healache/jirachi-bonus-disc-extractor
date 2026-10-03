@@ -24,10 +24,13 @@ Open <https://healache.github.io/jirachi-bonus-disc-extractor/>.
 | `client.2003_1112.bin` | METEOR     | 30719 | ENG      | Unreleased            |
 | `sample0519.bin`       | ネガイボシ | 30719 | JPN      | Official distribution |
 
+See [technical notes](TECHNICAL.md) for the exact disc offsets and hashes.
+
 ## Shiny
 
 WISHMKR and METEOR shipped with broken shiny locks and can be hunted on retail.
-ネガイボシ's shiny lock works, so it has to be removed.
+ネガイボシ's shiny lock works, so it has to be removed (see
+[technical notes](TECHNICAL.md) for the exact patch).
 
 | ROM                       | Odds        | Approx.   |
 | ------------------------- | ----------- | --------- |
